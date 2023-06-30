@@ -19,18 +19,13 @@ process SAMPLESHEET_CHECK {
 
     script: // This script is bundled with the pipeline, in nf-core/flupipe/bin/
     """
-    echo Antes de entrar al check!
-
     check_samplesheet.py \\
         $samplesheet \\
         samplesheet.valid.csv
-
-    echo Al salir del check!
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         python: \$(python --version | sed 's/Python //g')
     END_VERSIONS
-    echo Al salir del tema de las versiones!
     """
 }

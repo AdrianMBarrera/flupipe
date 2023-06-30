@@ -14,6 +14,7 @@ workflow INPUT_CHECK {
         .splitCsv ( header:true, sep:',' )
         .map { create_fastq_channel(it) }
         .set { reads }
+        .view()
 
     emit:
     reads                                     // channel: [ val(meta), [ reads ] ]

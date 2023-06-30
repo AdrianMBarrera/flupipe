@@ -76,13 +76,28 @@ workflow FLUPIPE {
     INPUT_CHECK (
         ch_input
     )
+    .reads
+    .map {
+        meta, fastq ->
+            meta.id = meta.id.split('_')[0..-2].join('_')
+            [ meta, fastq ]
+    }
+    .groupTuple(by: [0])
+    .branch {
+        meta, fastq ->
+            single  : fastq.size() == 1
+                return [ meta, fastq.flatten() ]
+            multiple: fastq.size() > 1
+                return [ meta, fastq.flatten() ]
+    }
+    .set { ch_fastq }
     ch_versions = ch_versions.mix(INPUT_CHECK.out.versions)
 
     //
     // MODULE: Run FastQC
     //
     FASTQC (
-        INPUT_CHECK.out.reads
+        ch_fastq.multiple
     )
     ch_versions = ch_versions.mix(FASTQC.out.versions.first())
 

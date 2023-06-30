@@ -77,7 +77,7 @@ workflow FLUPIPE {
         ch_input
     )
     .reads
-    .view
+    .view()
     ch_versions = ch_versions.mix(INPUT_CHECK.out.versions)
 
     //

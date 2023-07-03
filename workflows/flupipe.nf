@@ -10,17 +10,18 @@ def summary_params = NfcoreSchema.paramsSummaryMap(workflow, params)
 WorkflowFlupipe.initialise(params, log)
 
 
-// TODO nf-core: Add all file path parameters for the pipeline to the list below
 // Check input path parameters to see if they exist
 def checkPathParamList = [
     params.input,
     params.fasta,
+    params.adapter_fasta,
     params.multiqc_config
 ]
 for (param in checkPathParamList) { if (param) { file(param, checkIfExists: true) } }
 
 // Check mandatory parameters
 if (params.input) { ch_input = file(params.input) } else { exit 1, 'Input samplesheet not specified!' }
+if (params.adapter_fasta) { ch_adapter_fasta = file(params.adapter_fasta) } else { exit 1, 'Input adapter_fasta not specified!' }
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -53,7 +54,9 @@ include { INPUT_CHECK } from '../subworkflows/local/input_check'
 //
 // MODULE: Installed directly from nf-core/modules
 //
-include { FASTQC                      } from '../modules/nf-core/fastqc/main'
+include { FASTQC as FASTQC_RAW        } from '../modules/nf-core/fastqc/main'
+include { FASTQC as FASTQC_TRIM       } from '../modules/nf-core/fastqc/main'
+include { FASTP                       } from '../modules/nf-core/fastp/main'
 include { MULTIQC                     } from '../modules/nf-core/multiqc/main'
 include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoftwareversions/main'
 
@@ -76,18 +79,35 @@ workflow FLUPIPE {
     INPUT_CHECK (
         ch_input
     )
-    .reads
-    .view()
     ch_versions = ch_versions.mix(INPUT_CHECK.out.versions)
 
     //
-    // MODULE: Run FastQC
+    // MODULE: Run FastQC on raw reads
     //
-    FASTQC (
+    FASTQC_RAW (
         INPUT_CHECK.out.reads
     )
-    ch_versions = ch_versions.mix(FASTQC.out.versions.first())
+    ch_versions = ch_versions.mix(FASTQC_RAW.out.versions.first())
 
+    //
+    // SUBWORKFLOW: Run Fastp
+    //
+    FASTP (
+        INPUT_CHECK.out.reads
+    )
+    ch_versions = ch_versions.mix(FASTP.out.versions.first())
+
+    //
+    // MODULE: Run FastQC on trimmed reads
+    //
+    FASTQC_TRIM (
+        FASTP.out.reads
+    )
+    ch_versions = ch_versions.mix(FASTQC_TRIM.out.versions.first())
+
+    //
+    // MODULE: Run DumpSoftwareVersions
+    //
     CUSTOM_DUMPSOFTWAREVERSIONS (
         ch_versions.unique().collectFile(name: 'collated_versions.yml')
     )

@@ -93,7 +93,10 @@ workflow FLUPIPE {
     // SUBWORKFLOW: Run Fastp
     //
     FASTP (
-        INPUT_CHECK.out.reads
+        INPUT_CHECK.out.reads,
+        ch_adapter_fasta,
+        params.save_trimmed_fail,
+        params.save_checked
     )
     ch_versions = ch_versions.mix(FASTP.out.versions.first())
 

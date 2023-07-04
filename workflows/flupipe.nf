@@ -43,7 +43,8 @@ ch_multiqc_custom_methods_description = params.multiqc_methods_description ? fil
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
-include { INPUT_CHECK } from '../subworkflows/local/input_check'
+include { INPUT_CHECK           } from '../subworkflows/local/input_check'
+include { FASTP_AND_FASTQC_TRIM } from '../subworkflows/local/fastp_and_fastqc_trim'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -55,8 +56,6 @@ include { INPUT_CHECK } from '../subworkflows/local/input_check'
 // MODULE: Installed directly from nf-core/modules
 //
 include { FASTQC as FASTQC_RAW        } from '../modules/nf-core/fastqc/main'
-include { FASTQC as FASTQC_TRIM       } from '../modules/nf-core/fastqc/main'
-include { FASTP                       } from '../modules/nf-core/fastp/main'
 include { MULTIQC                     } from '../modules/nf-core/multiqc/main'
 include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoftwareversions/main'
 
@@ -90,23 +89,15 @@ workflow FLUPIPE {
     ch_versions = ch_versions.mix(FASTQC_RAW.out.versions.first())
 
     //
-    // SUBWORKFLOW: Run Fastp
+    // SUBWORKFLOW: Run Fastp and FastQC on trimmed reads
     //
-    FASTP (
+    FASTP_AND_FASTQC_TRIM (
         INPUT_CHECK.out.reads,
         ch_adapter_fasta,
         params.save_trimmed_fail,
         params.save_merged
     )
-    ch_versions = ch_versions.mix(FASTP.out.versions.first())
-
-    //
-    // MODULE: Run FastQC on trimmed reads
-    //
-    FASTQC_TRIM (
-        FASTP.out.reads
-    )
-    ch_versions = ch_versions.mix(FASTQC_TRIM.out.versions.first())
+    ch_versions = ch_versions.mix(FASTP_AND_FASTQC_TRIM.out.versions.first())
 
     //
     // MODULE: Run DumpSoftwareVersions

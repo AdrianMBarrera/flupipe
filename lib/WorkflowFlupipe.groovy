@@ -76,4 +76,22 @@ class WorkflowFlupipe {
             Nextflow.error(error_string)
         }
     }
+
+    //
+    // Function that parses fastp json output file to get total number of reads after trimming
+    // NOTE: This code is part of nf-core/ViralRecon pipeline.
+    //
+    public static Integer getFastpReadsAfterFiltering(json_file) {
+        def Map json = (Map) new JsonSlurper().parseText(json_file.text).get('summary')
+        return json['after_filtering']['total_reads'].toInteger()
+    }
+
+    //
+    // Function that parses fastp json output file to get total number of reads before trimming
+    // NOTE: This code is part of nf-core/ViralRecon pipeline.
+    //
+    public static Integer getFastpReadsBeforeFiltering(json_file) {
+        def Map json = (Map) new JsonSlurper().parseText(json_file.text).get('summary')
+        return json['before_filtering']['total_reads'].toInteger()
+    }
 }

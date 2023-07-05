@@ -105,7 +105,7 @@ workflow FLUPIPE {
 
     //
     // Filter empty FASTQ files after adapter trimming
-    // NOTE: This code is part of ViralRecon pipeline.
+    // NOTE: This code is part of nf-core/ViralRecon pipeline.
     //
     ch_fail_reads_multiqc = Channel.empty()
     if (!params.skip_fastp) {

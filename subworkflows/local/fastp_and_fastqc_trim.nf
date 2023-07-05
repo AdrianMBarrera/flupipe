@@ -1,6 +1,6 @@
 //
 // Run Fastp and FastQC on trimmed reads
-// Based on ViralRecon subworkflow: fastq_trim_fastp_fastqc.nf (https://github.com/nf-core/viralrecon/blob/master/subworkflows/local/fastq_trim_fastp_fastqc.nf)
+// Based on nf-core/ViralRecon subworkflow: fastq_trim_fastp_fastqc.nf (https://github.com/nf-core/viralrecon/blob/master/subworkflows/local/fastq_trim_fastp_fastqc.nf)
 //
 
 include { FASTP                 } from '../../modules/nf-core/fastp/main'

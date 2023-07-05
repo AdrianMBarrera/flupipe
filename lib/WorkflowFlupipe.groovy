@@ -5,6 +5,8 @@
 import nextflow.Nextflow
 import groovy.text.SimpleTemplateEngine
 
+import groovy.json.JsonSlurper
+
 class WorkflowFlupipe {
 
     //

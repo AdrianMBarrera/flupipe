@@ -329,6 +329,9 @@
             "$ref": "#/definitions/reference_genome_options"
         },
         {
+            "$ref": "#/definitions/flupipe_specific_options"
+        },
+        {
             "$ref": "#/definitions/institutional_config_options"
         },
         {

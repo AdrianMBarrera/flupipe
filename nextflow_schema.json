@@ -103,6 +103,14 @@
                     "fa_icon": "fab fa-gitkraken",
                     "description": "Optional parameter to save a file reporting the taxonomic classification of each input read."
                 },
+                "adapter_fasta": {
+                    "type": "string",
+                    "format": "file-path",
+                    "mimetype": "text/plain",
+                    "pattern": "^\\S+\\.fn?a(sta)?(\\.gz)?$",
+                    "description": "File in FASTA format containing possible adapters to remove.",
+                    "fa_icon": "far fa-file-code"
+                },
                 "fastp_save_trimmed_fail": {
                     "type": "boolean",
                     "fa_icon": "fas fa-save",

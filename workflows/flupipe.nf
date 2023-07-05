@@ -44,6 +44,7 @@ ch_multiqc_custom_methods_description = params.multiqc_methods_description ? fil
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
 include { INPUT_CHECK           } from '../subworkflows/local/input_check'
+include { PREPARE_ENVIRONMENT   } from '../subworkflows/local/prepare_environment'
 include { FASTP_AND_FASTQC_TRIM } from '../subworkflows/local/fastp_and_fastqc_trim'
 
 /*
@@ -59,6 +60,7 @@ include { FASTQC as FASTQC_RAW        } from '../modules/nf-core/fastqc/main'
 include { MULTIQC                     } from '../modules/nf-core/multiqc/main'
 include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoftwareversions/main'
 include { KRAKEN2_KRAKEN2 as KRAKEN2  } from '../modules/nf-core/kraken2/kraken2/main'
+include { UNICYCLER                   } from '../modules/nf-core/unicycler/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -80,6 +82,12 @@ workflow FLUPIPE {
         ch_input
     )
     ch_versions = ch_versions.mix(INPUT_CHECK.out.versions)
+
+    //
+    // SUBWORKFLOW: Prepare all necessary files to run the pipeline
+    //
+    PREPARE_ENVIRONMENT ()
+    ch_versions = ch_versions.mix(PREPARE_ENVIRONMENT.out.versions)
 
     //
     // MODULE: Run FastQC on raw reads
@@ -147,7 +155,7 @@ workflow FLUPIPE {
     ch_kraken2_multiqc = Channel.empty()
     KRAKEN2 (
         ch_trimmed_reads,
-        params.kraken2_humandb,
+        PREPARE_ENVIRONMENT.out.kraken2_db,
         params.kraken2_save_output_fastqs,
         params.kraken2_save_reads_assigment
     )
@@ -157,6 +165,14 @@ workflow FLUPIPE {
     if (params.kraken2_save_output_fastqs) {
         ch_nonhuman_reads = KRAKEN2.out.unclassified_reads_fastq
     }
+
+    //
+    // MODULE: Preliminary assembly using Unicycler (SPAdes)
+    //
+    UNICYCLER (
+        ch_nonhuman_reads
+    )
+    ch_versions = ch_versions.mix(UNICYCLER.out.versions.first())
 
     //
     // MODULE: Run DumpSoftwareVersions

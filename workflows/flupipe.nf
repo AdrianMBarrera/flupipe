@@ -148,7 +148,6 @@ workflow FLUPIPE {
             .set { ch_fail_reads_multiqc }
     }
 
-
     //
     // MODULE: Remove host reads using Kraken2 with humanDB
     //

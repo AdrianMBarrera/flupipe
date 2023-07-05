@@ -34,4 +34,8 @@ workflow PREPARE_ENVIRONMENT {
             ch_versions   = ch_versions.mix(KRAKEN2_BUILD.out.versions)
         }
     }
+
+    emit:
+    kraken2_db = ch_kraken2_db // path: kraken2_db/
+    versions   = ch_versions   // channel: [ versions.yml ]
 }

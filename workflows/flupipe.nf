@@ -15,6 +15,7 @@ def checkPathParamList = [
     params.input,
     params.fasta,
     params.adapter_fasta,
+    params.kraken2_db,
     params.multiqc_config
 ]
 for (param in checkPathParamList) { if (param) { file(param, checkIfExists: true) } }

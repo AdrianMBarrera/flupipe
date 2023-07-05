@@ -4,7 +4,7 @@
 //
 
 include { FASTP                 } from '../../modules/nf-core/fastp/main'
-include { FASTQC AS FASTQC_TRIM } from '../../modules/nf-core/fastqc/main'
+include { FASTQC as FASTQC_TRIM } from '../../modules/nf-core/fastqc/main'
 
 //
 // Function that parses fastp json output file to get total number of reads after trimming

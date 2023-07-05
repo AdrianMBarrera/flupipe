@@ -80,6 +80,52 @@
                 }
             }
         },
+        "flupipe_specific_options": {
+            "title": "FluPipe options",
+            "type": "object",
+            "description": "Options to adjust the FluPipe workflow.",
+            "default": "",
+            "properties": {
+                "kraken2_humandb": {
+                    "type": "string",
+                    "format": "path",
+                    "default": "",
+                    "fa_icon": "fab fa-gitkraken",
+                    "description": "Full path to local Kraken2 human database."
+                },
+                "kraken2_save_output_fastqs": {
+                    "type": "boolean",
+                    "fa_icon": "fab fa-gitkraken",
+                    "description": "Optional parameter to save classified and unclassified reads as fastq files."
+                },
+                "kraken2_save_reads_assigment": {
+                    "type": "boolean",
+                    "fa_icon": "fab fa-gitkraken",
+                    "description": "Optional parameter to save a file reporting the taxonomic classification of each input read."
+                },
+                "fastp_save_trimmed_fail": {
+                    "type": "boolean",
+                    "fa_icon": "fas fa-save",
+                    "description": "Optional parameter to save the trimmed reads in the results directory."
+                },
+                "fastp_save_merged": {
+                    "type": "boolean",
+                    "fa_icon": "fas fa-save",
+                    "description": "Optional parameter to save all merged reads in the results directory."
+                },
+                "skip_fastp": {
+                    "type": "boolean",
+                    "fa_icon": "fas fa-fast-forward",
+                    "description": "Skip fastp."
+                },
+                "skip_fastqc": {
+                    "type": "boolean",
+                    "fa_icon": "fas fa-fast-forward",
+                    "description": "Skip FastQC."
+                }
+            },
+            "fa_icon": "fas fa-cut"
+        },
         "institutional_config_options": {
             "title": "Institutional config options",
             "type": "object",

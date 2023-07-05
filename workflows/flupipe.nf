@@ -29,9 +29,9 @@ if (params.adapter_fasta) { ch_adapter_fasta = file(params.adapter_fasta) } else
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-ch_multiqc_config          = Channel.fromPath("$projectDir/assets/multiqc_config.yml", checkIfExists: true)
-ch_multiqc_custom_config   = params.multiqc_config ? Channel.fromPath( params.multiqc_config, checkIfExists: true ) : Channel.empty()
-ch_multiqc_logo            = params.multiqc_logo   ? Channel.fromPath( params.multiqc_logo, checkIfExists: true ) : Channel.empty()
+ch_multiqc_config                     = Channel.fromPath("$projectDir/assets/multiqc_config.yml", checkIfExists: true)
+ch_multiqc_custom_config              = params.multiqc_config ? Channel.fromPath( params.multiqc_config, checkIfExists: true ) : Channel.empty()
+ch_multiqc_logo                       = params.multiqc_logo   ? Channel.fromPath( params.multiqc_logo, checkIfExists: true ) : Channel.empty()
 ch_multiqc_custom_methods_description = params.multiqc_methods_description ? file(params.multiqc_methods_description, checkIfExists: true) : file("$projectDir/assets/methods_description_template.yml", checkIfExists: true)
 
 /*
@@ -58,7 +58,7 @@ include { FASTP_AND_FASTQC_TRIM } from '../subworkflows/local/fastp_and_fastqc_t
 include { FASTQC as FASTQC_RAW        } from '../modules/nf-core/fastqc/main'
 include { MULTIQC                     } from '../modules/nf-core/multiqc/main'
 include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoftwareversions/main'
-include { KRAKEN2_KRAKEN2 as KRAKEN2  } from '../modules/nf-core/custom/kraken2/kraken2/main'
+include { KRAKEN2_KRAKEN2 as KRAKEN2  } from '../modules/nf-core/kraken2/kraken2/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -84,10 +84,12 @@ workflow FLUPIPE {
     //
     // MODULE: Run FastQC on raw reads
     //
-    FASTQC_RAW (
-        INPUT_CHECK.out.reads
-    )
-    ch_versions = ch_versions.mix(FASTQC_RAW.out.versions.first())
+    if (!params.skip_fastqc) {
+        FASTQC_RAW (
+            INPUT_CHECK.out.reads
+        )
+        ch_versions = ch_versions.mix(FASTQC_RAW.out.versions.first())
+    }
 
     //
     // SUBWORKFLOW: Run Fastp and FastQC on trimmed reads
@@ -95,8 +97,8 @@ workflow FLUPIPE {
     FASTP_AND_FASTQC_TRIM (
         INPUT_CHECK.out.reads,
         ch_adapter_fasta,
-        params.save_trimmed_fail,
-        params.save_merged
+        params.fastp_save_trimmed_fail,
+        params.fastp_save_merged
     )
     ch_trimmed_reads = FASTP_AND_FASTQC_TRIM.out.reads
     ch_versions = ch_versions.mix(FASTP_AND_FASTQC_TRIM.out.versions.first())
@@ -143,19 +145,17 @@ workflow FLUPIPE {
     // MODULE: Remove host reads using Kraken2 with humanDB
     //
     ch_kraken2_multiqc = Channel.empty()
-    if (!params.skip_kraken2) {
-        KRAKEN2 (
-            ch_trimmed_reads,
-            params.kraken2_humandb,
-            params.kraken2_save_output_fastqs,
-            params.kraken2_save_reads_assigment
-        )
-        ch_kraken2_multiqc = KRAKEN2.out.report
-        ch_versions = ch_versions.mix(KRAKEN2.out.versions.first())
+    KRAKEN2 (
+        ch_trimmed_reads,
+        params.kraken2_humandb,
+        params.kraken2_save_output_fastqs,
+        params.kraken2_save_reads_assigment
+    )
+    ch_kraken2_multiqc = KRAKEN2.out.report
+    ch_versions = ch_versions.mix(KRAKEN2.out.versions.first())
 
-        if (params.kraken2_save_output_fastqs) {
-            ch_nonhuman_reads = KRAKEN2.out.unclassified_reads_fastq
-        }
+    if (params.kraken2_save_output_fastqs) {
+        ch_nonhuman_reads = KRAKEN2.out.unclassified_reads_fastq
     }
 
     //

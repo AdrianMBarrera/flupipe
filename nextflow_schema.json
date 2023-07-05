@@ -141,6 +141,11 @@
                     "type": "boolean",
                     "fa_icon": "fas fa-fast-forward",
                     "description": "Skip FastQC."
+                },
+                "skip_kraken2": {
+                    "type": "boolean",
+                    "fa_icon": "fas fa-fast-forward",
+                    "description": "Skip Kraken2."
                 }
             },
             "fa_icon": "fas fa-cut"

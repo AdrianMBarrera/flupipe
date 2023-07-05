@@ -58,6 +58,7 @@ include { FASTP_AND_FASTQC_TRIM } from '../subworkflows/local/fastp_and_fastqc_t
 include { FASTQC as FASTQC_RAW        } from '../modules/nf-core/fastqc/main'
 include { MULTIQC                     } from '../modules/nf-core/multiqc/main'
 include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoftwareversions/main'
+include { KRAKEN2_KRAKEN2 as KRAKEN2  } from '../modules/nf-core/custom/kraken2/kraken2/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -97,7 +98,65 @@ workflow FLUPIPE {
         params.save_trimmed_fail,
         params.save_merged
     )
+    ch_trimmed_reads = FASTP_AND_FASTQC_TRIM.out.reads
     ch_versions = ch_versions.mix(FASTP_AND_FASTQC_TRIM.out.versions.first())
+
+    //
+    // Filter empty FASTQ files after adapter trimming
+    // NOTE: This code is part of ViralRecon pipeline.
+    //
+    ch_fail_reads_multiqc = Channel.empty()
+    if (!params.skip_fastp) {
+        ch_trimmed_reads
+            .join(FASTP_AND_FASTQC_TRIM.out.trim_json)
+            .map {
+                meta, reads, json ->
+                    pass = WorkflowFlupipe.getFastpReadsAfterFiltering(json) > 0
+                    [ meta, reads, json, pass ]
+            }
+            .set { ch_pass_fail_reads }
+
+        ch_pass_fail_reads
+            .map { meta, reads, json, pass -> if (pass) [ meta, reads ] }
+            .set { ch_variants_fastq }
+
+        ch_pass_fail_reads
+            .map {
+                meta, reads, json, pass ->
+                if (!pass) {
+                    fail_mapped_reads[meta.id] = 0
+                    num_reads = WorkflowFlupipe.getFastpReadsBeforeFiltering(json)
+                    return [ "$meta.id\t$num_reads" ]
+                }
+            }
+            .collect()
+            .map {
+                tsv_data ->
+                    def header = ['Sample', 'Reads before trimming']
+                    WorkflowCommons.multiqcTsvFromList(tsv_data, header)
+            }
+            .set { ch_fail_reads_multiqc }
+    }
+
+
+    //
+    // MODULE: Remove host reads using Kraken2 with humanDB
+    //
+    ch_kraken2_multiqc = Channel.empty()
+    if (!params.skip_kraken2) {
+        KRAKEN2 (
+            ch_trimmed_reads,
+            params.kraken2_humandb,
+            params.kraken2_save_output_fastqs,
+            params.kraken2_save_reads_assigment
+        )
+        ch_kraken2_multiqc = KRAKEN2.out.report
+        ch_versions = ch_versions.mix(KRAKEN2.out.versions.first())
+
+        if (params.kraken2_save_output_fastqs) {
+            ch_nonhuman_reads = KRAKEN2.out.unclassified_reads_fastq
+        }
+    }
 
     //
     // MODULE: Run DumpSoftwareVersions
@@ -121,7 +180,8 @@ workflow FLUPIPE {
     ch_multiqc_files = ch_multiqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect())
     ch_multiqc_files = ch_multiqc_files.mix(FASTQC_RAW.out.zip.collect{it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(FASTP_AND_FASTQC_TRIM.out.trim_json.collect{it[1]}.ifEmpty([]))
-    ch_multiqc_files = ch_multiqc_files.mix(FASTQ_TRIM_FASTP_FASTQC.out.fastqc_trim_zip.collect{it[1]}.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(FASTP_AND_FASTQC_TRIM.out.fastqc_trim_zip.collect{it[1]}.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(ch_kraken2_multiqc.collect{it[1]}.ifEmpty([]))
 
     MULTIQC (
         ch_multiqc_files.collect(),

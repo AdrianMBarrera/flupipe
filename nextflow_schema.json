@@ -138,21 +138,6 @@
                     "type": "boolean",
                     "fa_icon": "fas fa-save",
                     "description": "Optional parameter to save all merged reads in the results directory."
-                },
-                "skip_fastp": {
-                    "type": "boolean",
-                    "fa_icon": "fas fa-fast-forward",
-                    "description": "Skip fastp."
-                },
-                "skip_fastqc": {
-                    "type": "boolean",
-                    "fa_icon": "fas fa-fast-forward",
-                    "description": "Skip FastQC."
-                },
-                "skip_kraken2": {
-                    "type": "boolean",
-                    "fa_icon": "fas fa-fast-forward",
-                    "description": "Skip Kraken2."
                 }
             },
             "fa_icon": "fas fa-cut"

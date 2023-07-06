@@ -17,7 +17,7 @@ workflow PREPARE_ENVIRONMENT {
     // Prepare files to build humanDB for Kraken2
     //
     ch_kraken2_db = Channel.empty()
-    if (params.kraken2_db_path) {
+    if (params.kraken2_db) {
         if (params.kraken2_db.endsWith('.tar.gz')) {
             UNTAR_KRAKEN2_DB (
                 [ [:], params.kraken2_db ]
@@ -46,7 +46,7 @@ workflow PREPARE_ENVIRONMENT {
             GUNZIP_FLU_DB (
                 [ [:], params.flu_db ]
             )
-            ch_flu_unzip = GUNZIP_FLU_DB.out.untar.map { it[1] }
+            ch_flu_unzip = GUNZIP_FLU_DB.out.gunzip.map { it[1] }
             ch_versions = ch_versions.mix(GUNZIP_FLU_DB.out.versions)
         } else {
             ch_flu_unzip = Channel.value(file(params.flu_db))
@@ -80,12 +80,10 @@ process PARSE_FLU_DB {
     tag "$archive"
     label 'process_low'
 
-    conda (params.enable_conda ? "conda-forge::sed=4.7" : null)
-    if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
-        container "https://containers.biocontainers.pro/s3/SingImgsRepo/biocontainers/v1.2.0_cv1/biocontainers_v1.2.0_cv1.img"
-    } else {
-        container "biocontainers/biocontainers:v1.2.0_cv1"
-    }
+    conda "conda-forge::sed=4.8"
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'https://containers.biocontainers.pro/s3/SingImgsRepo/biocontainers/v1.2.0_cv1/biocontainers_v1.2.0_cv1.img' :
+        'biocontainers/biocontainers:v1.2.0_cv1' }"
 
     input:
     path archive

@@ -40,7 +40,7 @@ workflow PREPARE_ENVIRONMENT {
     //
     ch_flu_fna = Channel.empty()
     if (params.flu_fna) {
-        if (params.flu_fna.endsWith('.fna.gz')) {
+        if (params.flu_fna.endsWith('.gz')) {
             GUNZIP_FLU_DB (
                 [ [:], params.flu_fna ]
             )
@@ -50,16 +50,14 @@ workflow PREPARE_ENVIRONMENT {
             ch_flu_fna = Channel.value(file(params.flu_fna))
         }
 
-        ch_flu_fna_parsed = Channel.empty()
         PARSE_FLU_DB (
             ch_flu_fna
         )
-        ch_flu_fna_parsed = PARSE_FLU_DB.out.fna
         ch_versions = ch_versions.mix(PARSE_FLU_DB.out.versions)
 
         ch_flu_db = Channel.empty()
         BLAST_MAKEBLASTDB (
-            ch_flu_fna_parsed
+            PARSE_FLU_DB.out.fna
         )
         ch_flu_db = BLAST_MAKEBLASTDB.out.db
         ch_versions = ch_versions.mix(BLAST_MAKEBLASTDB.out.versions)
@@ -77,7 +75,7 @@ workflow PREPARE_ENVIRONMENT {
 // Based on https://github.com/peterk87/nf-flu/blob/master/modules/local/misc.nf (process GUNZIP_NCBI_FLU_FASTA)
 //
 process PARSE_FLU_DB {
-    tag "$archive"
+    tag "$fasta"
     label 'process_low'
 
     conda "conda-forge::sed=4.7"
@@ -86,18 +84,18 @@ process PARSE_FLU_DB {
         'nf-core/ubuntu:20.04' }"
 
     input:
-    tuple val(meta), path(fasta)
+    path fasta
 
     output:
-    tuple val(meta), path("*.fna"), emit: fna
-    path "versions.yml"           , emit: versions
+    path "*.fna"       , emit: fna
+    path "versions.yml", emit: versions
 
     when:
     task.ext.when == null || task.ext.when
 
     script:
     """
-    sed -E 's/^>gi\\|[0-9]+\\|gb\\|(\\w+)\\|/>/' $archive > influenza.fna
+    sed -E 's/^>gi\\|[0-9]+\\|gb\\|(\\w+)\\|/>/' $fasta > influenza.fna
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         sed: \$(echo \$(sed --version 2>1&) | sed 's/^.*(GNU sed) //; s/ Copyright.*\$//')

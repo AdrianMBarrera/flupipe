@@ -170,6 +170,7 @@ workflow FLUPIPE {
     // MODULE: Preliminary assembly using Unicycler (SPAdes)
     //
     UNICYCLER (
+        KRAKEN2.out.meta,
         ch_nonhuman_reads
     )
     ch_versions = ch_versions.mix(UNICYCLER.out.versions.first())

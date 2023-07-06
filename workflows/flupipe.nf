@@ -116,37 +116,35 @@ workflow FLUPIPE {
     // NOTE: This code is part of nf-core/ViralRecon pipeline.
     //
     ch_fail_reads_multiqc = Channel.empty()
-    if (!params.skip_fastp) {
-        ch_trimmed_reads
-            .join(FASTP_AND_FASTQC_TRIM.out.trim_json)
-            .map {
-                meta, reads, json ->
-                    pass = WorkflowFlupipe.getFastpReadsAfterFiltering(json) > 0
-                    [ meta, reads, json, pass ]
-            }
-            .set { ch_pass_fail_reads }
+    ch_trimmed_reads
+        .join(FASTP_AND_FASTQC_TRIM.out.trim_json)
+        .map {
+            meta, reads, json ->
+                pass = WorkflowFlupipe.getFastpReadsAfterFiltering(json) > 0
+                [ meta, reads, json, pass ]
+        }
+        .set { ch_pass_fail_reads }
 
-        ch_pass_fail_reads
-            .map { meta, reads, json, pass -> if (pass) [ meta, reads ] }
-            .set { ch_variants_fastq }
+    ch_pass_fail_reads
+        .map { meta, reads, json, pass -> if (pass) [ meta, reads ] }
+        .set { ch_variants_fastq }
 
-        ch_pass_fail_reads
-            .map {
-                meta, reads, json, pass ->
-                if (!pass) {
-                    fail_mapped_reads[meta.id] = 0
-                    num_reads = WorkflowFlupipe.getFastpReadsBeforeFiltering(json)
-                    return [ "$meta.id\t$num_reads" ]
-                }
+    ch_pass_fail_reads
+        .map {
+            meta, reads, json, pass ->
+            if (!pass) {
+                fail_mapped_reads[meta.id] = 0
+                num_reads = WorkflowFlupipe.getFastpReadsBeforeFiltering(json)
+                return [ "$meta.id\t$num_reads" ]
             }
-            .collect()
-            .map {
-                tsv_data ->
-                    def header = ['Sample', 'Reads before trimming']
-                    WorkflowCommons.multiqcTsvFromList(tsv_data, header)
-            }
-            .set { ch_fail_reads_multiqc }
-    }
+        }
+        .collect()
+        .map {
+            tsv_data ->
+                def header = ['Sample', 'Reads before trimming']
+                WorkflowCommons.multiqcTsvFromList(tsv_data, header)
+        }
+        .set { ch_fail_reads_multiqc }
 
     //
     // MODULE: Remove host reads using Kraken2 with humanDB

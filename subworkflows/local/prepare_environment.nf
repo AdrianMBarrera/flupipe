@@ -86,11 +86,14 @@ process PARSE_FLU_DB {
         'nf-core/ubuntu:20.04' }"
 
     input:
-    path archive
+    tuple val(meta), path(fasta)
 
     output:
-    path "*.fna", emit: fna
-    path "versions.yml", emit: versions
+    tuple val(meta), path("*.fna"), emit: fna
+    path "versions.yml"           , emit: versions
+
+    when:
+    task.ext.when == null || task.ext.when
 
     script:
     """
@@ -101,5 +104,3 @@ process PARSE_FLU_DB {
     END_VERSIONS
     """
 }
-
-

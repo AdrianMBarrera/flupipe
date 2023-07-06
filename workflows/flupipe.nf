@@ -175,6 +175,11 @@ workflow FLUPIPE {
     ch_versions = ch_versions.mix(UNICYCLER.out.versions.first())
 
     //
+    // MODULE: Detect hits of previous assembly step using BLASTn with NCBI Influenza Virus Database:
+    //
+    // TODO
+
+    //
     // MODULE: Run DumpSoftwareVersions
     //
     CUSTOM_DUMPSOFTWAREVERSIONS (

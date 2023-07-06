@@ -35,44 +35,40 @@ workflow FASTP_AND_FASTQC_TRIM {
     trim_reads_merged = Channel.empty()
     fastqc_trim_html  = Channel.empty()
     fastqc_trim_zip   = Channel.empty()
-    if (!params.skip_fastp) {
-        FASTP (
-            reads,
-            adapter_fasta,
-            save_trimmed_fail,
-            save_merged
-        )
-        trim_reads        = FASTP.out.reads
-        trim_json         = FASTP.out.json
-        trim_html         = FASTP.out.html
-        trim_log          = FASTP.out.log
-        trim_reads_fail   = FASTP.out.reads_fail
-        trim_reads_merged = FASTP.out.reads_merged
-        ch_versions       = ch_versions.mix(FASTP.out.versions.first())
+    FASTP (
+        reads,
+        adapter_fasta,
+        save_trimmed_fail,
+        save_merged
+    )
+    trim_reads        = FASTP.out.reads
+    trim_json         = FASTP.out.json
+    trim_html         = FASTP.out.html
+    trim_log          = FASTP.out.log
+    trim_reads_fail   = FASTP.out.reads_fail
+    trim_reads_merged = FASTP.out.reads_merged
+    ch_versions       = ch_versions.mix(FASTP.out.versions.first())
 
 
-        //
-        // Filter empty FASTQ files after adapter trimming so FastQC doesn't fail
-        //
-        trim_reads
-            .join(trim_json)
-            .map {
-                meta, reads, json ->
-                    if (getFastpReadsAfterFiltering(json) > 0) {
-                        [ meta, reads ]
-                    }
-            }
-            .set { trim_reads }
-
-        if (!params.skip_fastqc) {
-            FASTQC_TRIM (
-                trim_reads
-            )
-            fastqc_trim_html = FASTQC_TRIM.out.html
-            fastqc_trim_zip  = FASTQC_TRIM.out.zip
-            ch_versions      = ch_versions.mix(FASTQC_TRIM.out.versions.first())
+    //
+    // Filter empty FASTQ files after adapter trimming so FastQC doesn't fail
+    //
+    trim_reads
+        .join(trim_json)
+        .map {
+            meta, reads, json ->
+                if (getFastpReadsAfterFiltering(json) > 0) {
+                    [ meta, reads ]
+                }
         }
-    }
+        .set { trim_reads }
+
+    FASTQC_TRIM (
+        trim_reads
+    )
+    fastqc_trim_html = FASTQC_TRIM.out.html
+    fastqc_trim_zip  = FASTQC_TRIM.out.zip
+    ch_versions      = ch_versions.mix(FASTQC_TRIM.out.versions.first())
 
     emit:
     reads = trim_reads // channel: [ val(meta), [ reads ] ]

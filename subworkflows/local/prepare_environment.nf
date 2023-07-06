@@ -42,12 +42,12 @@ workflow PREPARE_ENVIRONMENT {
     if (params.flu_fna) {
         if (params.flu_fna.endsWith('.fna.gz')) {
             GUNZIP_FLU_DB (
-                [ [:], params.flu_db ]
+                [ [:], params.flu_fna ]
             )
             ch_flu_fna = GUNZIP_FLU_DB.out.gunzip.map { it[1] }
             ch_versions = ch_versions.mix(GUNZIP_FLU_DB.out.versions)
         } else {
-            ch_flu_fna = Channel.value(file(params.flu_db))
+            ch_flu_fna = Channel.value(file(params.flu_fna))
         }
 
         ch_flu_fna_parsed = Channel.empty()

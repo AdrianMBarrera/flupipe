@@ -96,7 +96,7 @@
                     "format": "path",
                     "default": "",
                     "fa_icon": "fab fa-gitkraken",
-                    "description": "Full path to remote Kraken2 human database."
+                    "description": "Full path to remote or local Kraken2 human database (compressed in TAR.GZ format or not)."
                 },
                 "kraken2_db_name": {
                     "type": "string",
@@ -113,6 +113,13 @@
                     "type": "boolean",
                     "fa_icon": "fab fa-gitkraken",
                     "description": "Optional parameter to save a file reporting the taxonomic classification of each input read."
+                },
+                "flu_db": {
+                    "type": "string",
+                    "format": "path",
+                    "default": "influenza.fna.gz",
+                    "fa_icon": "far fa-file-code",
+                    "description": "Full path to local NCBI Influenza Virus Database"
                 },
                 "adapter_fasta": {
                     "type": "string",

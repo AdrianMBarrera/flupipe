@@ -17,37 +17,30 @@ workflow PREPARE_ENVIRONMENT {
     // Prepare files to build humanDB for Kraken2
     //
     ch_kraken2_db = Channel.empty()
-    if (!params.skip_kraken2) {
-        if (params.kraken2_db) {
-            if (params.kraken2_db.endsWith('.tar.gz')) {
-                UNTAR_KRAKEN2_DB (
-                    [ [:], params.kraken2_db ]
-                )
-                ch_kraken2_db = UNTAR_KRAKEN2_DB.out.untar.map { it[1] }
-                ch_versions = ch_versions.mix(UNTAR_KRAKEN2_DB.out.versions)
-            } else {
-                ch_kraken2_db = Channel.value(file(params.kraken2_db))
-            }
-        } else {
-            KRAKEN2_BUILD (
-                params.kraken2_db_name
+    if (params.kraken2_db_path) {
+        if (params.kraken2_db.endsWith('.tar.gz')) {
+            UNTAR_KRAKEN2_DB (
+                [ [:], params.kraken2_db ]
             )
-            ch_kraken2_db = KRAKEN2_BUILD.out.db.first()
-            ch_versions   = ch_versions.mix(KRAKEN2_BUILD.out.versions)
+            ch_kraken2_db = UNTAR_KRAKEN2_DB.out.untar.map { it[1] }
+            ch_versions = ch_versions.mix(UNTAR_KRAKEN2_DB.out.versions)
+        } else {
+            ch_kraken2_db = Channel.value(file(params.kraken2_db))
         }
+    } else {
+        KRAKEN2_BUILD (
+            params.kraken2_db_name
+        )
+        ch_kraken2_db = KRAKEN2_BUILD.out.db
+        ch_versions   = ch_versions.mix(KRAKEN2_BUILD.out.versions)
     }
-
-    KRAKEN2_BUILD (
-        params.kraken2_db_name
-    )
-    ch_kraken2_db = KRAKEN2_BUILD.out.db.first()
-    ch_versions   = ch_versions.mix(KRAKEN2_BUILD.out.versions)
 
     //
     // Prepare files to build NCBI Influenza Virus Database for BLASTn
     //
     ch_flu_unzip = Channel.empty()
     ch_flu_fna = Channel.empty()
+    ch_flu_db = Channel.empty()
     if (params.flu_db) {
         if (params.flu_db.endsWith('.fna.gz')) {
             GUNZIP_FLU_DB (
@@ -65,7 +58,6 @@ workflow PREPARE_ENVIRONMENT {
         ch_flu_fna = PARSE_FLU_DB.out.fna
         ch_versions = ch_versions.mix(PARSE_FLU_DB.out.versions)
 
-        ch_flu_db = Channel.empty()
         BLAST_MAKEBLASTDB (
             ch_flu_fna
         )

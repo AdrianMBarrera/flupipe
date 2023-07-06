@@ -94,12 +94,10 @@ workflow FLUPIPE {
     //
     // MODULE: Run FastQC on raw reads
     //
-    if (!params.skip_fastqc) {
-        FASTQC_RAW (
-            INPUT_CHECK.out.reads
-        )
-        ch_versions = ch_versions.mix(FASTQC_RAW.out.versions.first())
-    }
+    FASTQC_RAW (
+        INPUT_CHECK.out.reads
+    )
+    ch_versions = ch_versions.mix(FASTQC_RAW.out.versions.first())
 
     //
     // SUBWORKFLOW: Run Fastp and FastQC on trimmed reads

@@ -62,6 +62,7 @@ include { MULTIQC                     } from '../modules/nf-core/multiqc/main'
 include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoftwareversions/main'
 include { KRAKEN2_KRAKEN2 as KRAKEN2  } from '../modules/nf-core/kraken2/kraken2/main'
 include { UNICYCLER                   } from '../modules/nf-core/unicycler/main'
+include { BLAST_BLASTN                } from '../modules/nf-core/blast/blastn/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -159,19 +160,15 @@ workflow FLUPIPE {
         params.kraken2_save_output_fastqs,
         params.kraken2_save_reads_assigment
     )
+    ch_nonhuman_reads = KRAKEN2.out.unclassified_reads_fastq
     ch_kraken2_multiqc = KRAKEN2.out.report
     ch_versions = ch_versions.mix(KRAKEN2.out.versions.first())
-
-    if (params.kraken2_save_output_fastqs) {
-        ch_nonhuman_reads = KRAKEN2.out.unclassified_reads_fastq
-    }
 
     //
     // MODULE: Preliminary assembly using Unicycler (SPAdes)
     //
     UNICYCLER (
-        KRAKEN2.out.meta,
-        ch_nonhuman_reads
+        ch_nonhuman_reads.map { meta, fastq -> [ meta, fastq, [] ] }
     )
     ch_versions = ch_versions.mix(UNICYCLER.out.versions.first())
 

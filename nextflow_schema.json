@@ -114,10 +114,10 @@
                     "fa_icon": "fab fa-gitkraken",
                     "description": "Optional parameter to save a file reporting the taxonomic classification of each input read."
                 },
-                "flu_db": {
+                "flu_fna": {
                     "type": "string",
                     "format": "path",
-                    "default": "influenza.fna.gz",
+                    "default": "https://ftp.ncbi.nih.gov/genomes/INFLUENZA/influenza.fna.gz",
                     "fa_icon": "far fa-file-code",
                     "description": "Full path to local NCBI Influenza Virus Database"
                 },

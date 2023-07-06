@@ -38,28 +38,28 @@ workflow PREPARE_ENVIRONMENT {
     //
     // Prepare files to build NCBI Influenza Virus Database for BLASTn
     //
-    ch_flu_unzip = Channel.empty()
     ch_flu_fna = Channel.empty()
-    ch_flu_db = Channel.empty()
-    if (params.flu_db) {
-        if (params.flu_db.endsWith('.fna.gz')) {
+    if (params.flu_fna) {
+        if (params.flu_fna.endsWith('.fna.gz')) {
             GUNZIP_FLU_DB (
                 [ [:], params.flu_db ]
             )
-            ch_flu_unzip = GUNZIP_FLU_DB.out.gunzip.map { it[1] }
+            ch_flu_fna = GUNZIP_FLU_DB.out.gunzip.map { it[1] }
             ch_versions = ch_versions.mix(GUNZIP_FLU_DB.out.versions)
         } else {
-            ch_flu_unzip = Channel.value(file(params.flu_db))
+            ch_flu_fna = Channel.value(file(params.flu_db))
         }
 
+        ch_flu_fna_parsed = Channel.empty()
         PARSE_FLU_DB (
-            ch_flu_unzip
+            ch_flu_fna
         )
-        ch_flu_fna = PARSE_FLU_DB.out.fna
+        ch_flu_fna_parsed = PARSE_FLU_DB.out.fna
         ch_versions = ch_versions.mix(PARSE_FLU_DB.out.versions)
 
+        ch_flu_db = Channel.empty()
         BLAST_MAKEBLASTDB (
-            ch_flu_fna
+            ch_flu_fna_parsed
         )
         ch_flu_db = BLAST_MAKEBLASTDB.out.db
         ch_versions = ch_versions.mix(BLAST_MAKEBLASTDB.out.versions)
@@ -83,7 +83,7 @@ process PARSE_FLU_DB {
     conda "conda-forge::sed=4.7"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://depot.galaxyproject.org/singularity/ubuntu:20.04' :
-        'ubuntu' }"
+        'nf-core/ubuntu:20.04' }"
 
     input:
     path archive

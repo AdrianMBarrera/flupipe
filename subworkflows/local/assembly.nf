@@ -7,7 +7,7 @@ include { GUNZIP as GUNZIP_FASTA } from '../../modules/nf-core/gunzip/main'
 include { GUNZIP as GUNZIP_GFA   } from '../../modules/nf-core/gunzip/main'
 include { QUAST                  } from '../../modules/nf-core/quast/main'
 
-workflow assembly {
+workflow ASSEMBLY {
     take:
     reads // channel: [ val(meta), [ reads ] ]
 

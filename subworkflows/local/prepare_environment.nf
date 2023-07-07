@@ -95,7 +95,7 @@ process PARSE_FLU_DB {
 
     script:
     """
-    sed -E 's/^>gi\\|[0-9]+\\|gb\\|(\\w+)\\|/>/' $fasta > influenza.fna
+    sed -E 's/^>gi\\|[0-9]+\\|gb\\|(\\w+)\\|/>/' $fasta > influenza.parsed.fna
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         sed: \$(echo \$(sed --version 2>1&) | sed 's/^.*(GNU sed) //; s/ Copyright.*\$//')

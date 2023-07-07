@@ -47,6 +47,8 @@ ch_multiqc_custom_methods_description = params.multiqc_methods_description ? fil
 include { INPUT_CHECK           } from '../subworkflows/local/input_check'
 include { PREPARE_ENVIRONMENT   } from '../subworkflows/local/prepare_environment'
 include { FASTP_AND_FASTQC_TRIM } from '../subworkflows/local/fastp_and_fastqc_trim'
+include { ASSEMBLY              } from '../subworkflows/local/assembly'
+include { BLASTN_AND_PARSE      } from '../subworkflows/local/blastn_and_parse'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -58,11 +60,10 @@ include { FASTP_AND_FASTQC_TRIM } from '../subworkflows/local/fastp_and_fastqc_t
 // MODULE: Installed directly from nf-core/modules
 //
 include { FASTQC as FASTQC_RAW        } from '../modules/nf-core/fastqc/main'
+include { KRAKEN2_KRAKEN2 as KRAKEN2  } from '../modules/nf-core/kraken2/kraken2/main'
+include { BANDAGE_IMAGE               } from '../modules/nf-core/bandage/image/main'
 include { MULTIQC                     } from '../modules/nf-core/multiqc/main'
 include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoftwareversions/main'
-include { KRAKEN2_KRAKEN2 as KRAKEN2  } from '../modules/nf-core/kraken2/kraken2/main'
-include { UNICYCLER                   } from '../modules/nf-core/unicycler/main'
-include { BLAST_BLASTN                } from '../modules/nf-core/blast/blastn/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -161,21 +162,33 @@ workflow FLUPIPE {
     ch_versions = ch_versions.mix(KRAKEN2.out.versions.first())
 
     //
-    // MODULE: Preliminary assembly using Unicycler (SPAdes)
+    // Subworkflow: Preliminary assembly using Unicycler (SPAdes)
     //
-    UNICYCLER (
+    ASSEMBLY (
         ch_nonhuman_reads.map { meta, fastq -> [ meta, fastq, [] ] }
     )
-    ch_versions = ch_versions.mix(UNICYCLER.out.versions.first())
+    ch_versions = ch_versions.mix(ASSEMBLY.out.versions.first())
 
     //
-    // MODULE: Detect hits of previous assembly step using BLASTn with NCBI Influenza Virus Database:
+    // MODULE: Generate assembly visualisation with Bandage
     //
-    BLAST_BLASTN (
-        UNICYCLER.out.scaffolds,
+    ch_bandage_png = Channel.empty()
+    ch_bandage_svg = Channel.empty()
+    BANDAGE_IMAGE (
+        ASSEMBLY.out.gfa
+    )
+    ch_bandage_png = BANDAGE_IMAGE.out.png
+    ch_bandage_svg = BANDAGE_IMAGE.out.svg
+    ch_versions    = ch_versions.mix(BANDAGE_IMAGE.out.versions.first())
+
+
+    //
+    // Subworkflow: Detect hits of previous assembly step using BLASTn with NCBI Influenza Virus Database:
+    //
+    BLASTN_AND_PARSE (
+        ASSEMBLY.out.fasta,
         PREPARE_ENVIRONMENT.out.flu_db
     )
-    // TODO
 
     //
     // MODULE: Run DumpSoftwareVersions

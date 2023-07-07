@@ -171,7 +171,10 @@ workflow FLUPIPE {
     //
     // MODULE: Detect hits of previous assembly step using BLASTn with NCBI Influenza Virus Database:
     //
-
+    BLAST_BLASTN (
+        UNICYCLER.out.scaffolds,
+        PREPARE_ENVIRONMENT.out.flu_db
+    )
     // TODO
 
     //

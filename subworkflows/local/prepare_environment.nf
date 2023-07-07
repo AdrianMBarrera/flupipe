@@ -64,9 +64,9 @@ workflow PREPARE_ENVIRONMENT {
     }
 
     emit:
-    kraken2_db = ch_kraken2_db // path   : kraken2_db/
-    flu_db     = ch_flu_db     // path   : blast_db/
-    versions   = ch_versions   // channel: [ versions.yml ]
+    kraken2_db    = ch_kraken2_db        // path   : kraken2_db/
+    flu_db        = ch_flu_db            // path   : blast_db/
+    versions      = ch_versions          // channel: [ versions.yml ]
 }
 
 

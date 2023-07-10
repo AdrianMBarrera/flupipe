@@ -5,7 +5,7 @@
 include { UNICYCLER              } from '../../modules/nf-core/unicycler/main'
 include { GUNZIP as GUNZIP_FASTA } from '../../modules/nf-core/gunzip/main'
 include { GUNZIP as GUNZIP_GFA   } from '../../modules/nf-core/gunzip/main'
-include { QUAST                  } from '../../modules/nf-core/quast/main'
+include { BANDAGE_IMAGE          } from '../modules/nf-core/bandage/image/main'
 
 workflow ASSEMBLY {
     take:
@@ -45,6 +45,18 @@ workflow ASSEMBLY {
         .gunzip
         .filter { meta, gfa -> gfa.size() > 0 }
         .set { ch_gfa }
+
+    //
+    // Generate assembly visualisation with Bandage
+    //
+    ch_bandage_png = Channel.empty()
+    ch_bandage_svg = Channel.empty()
+    BANDAGE_IMAGE (
+        ch_gfa
+    )
+    ch_bandage_png = BANDAGE_IMAGE.out.png
+    ch_bandage_svg = BANDAGE_IMAGE.out.svg
+    ch_versions    = ch_versions.mix(BANDAGE_IMAGE.out.versions.first())
 
     emit:
     fasta    = ch_fasta

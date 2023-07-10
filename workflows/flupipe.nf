@@ -61,7 +61,6 @@ include { BLASTN_AND_PARSE      } from '../subworkflows/local/blastn_and_parse'
 //
 include { FASTQC as FASTQC_RAW        } from '../modules/nf-core/fastqc/main'
 include { KRAKEN2_KRAKEN2 as KRAKEN2  } from '../modules/nf-core/kraken2/kraken2/main'
-include { BANDAGE_IMAGE               } from '../modules/nf-core/bandage/image/main'
 include { MULTIQC                     } from '../modules/nf-core/multiqc/main'
 include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoftwareversions/main'
 
@@ -162,33 +161,25 @@ workflow FLUPIPE {
     ch_versions = ch_versions.mix(KRAKEN2.out.versions.first())
 
     //
-    // Subworkflow: Preliminary assembly using Unicycler (SPAdes)
+    // SUBWORKFLOW: Preliminary assembly using Unicycler (SPAdes)
     //
+    ch_fasta = Channel.empty()
+    ch_gfa   = Channel.empty()
     ASSEMBLY (
         ch_nonhuman_reads.map { meta, fastq -> [ meta, fastq, [] ] }
     )
+    ch_fasta    = ASSEMBLY.out.fasta
+    ch_gfa      = ASSEMBLY.out.gfa
     ch_versions = ch_versions.mix(ASSEMBLY.out.versions.first())
 
     //
-    // MODULE: Generate assembly visualisation with Bandage
-    //
-    ch_bandage_png = Channel.empty()
-    ch_bandage_svg = Channel.empty()
-    BANDAGE_IMAGE (
-        ASSEMBLY.out.gfa
-    )
-    ch_bandage_png = BANDAGE_IMAGE.out.png
-    ch_bandage_svg = BANDAGE_IMAGE.out.svg
-    ch_versions    = ch_versions.mix(BANDAGE_IMAGE.out.versions.first())
-
-
-    //
-    // Subworkflow: Detect hits of previous assembly step using BLASTn with NCBI Influenza Virus Database:
+    // SUBWORKFLOW: Detect hits of previous assembly step using BLASTn with NCBI Influenza Virus Database:
     //
     BLASTN_AND_PARSE (
-        ASSEMBLY.out.fasta,
+        ch_fasta,
         PREPARE_ENVIRONMENT.out.flu_db
     )
+    ch_versions    = ch_versions.mix(BANDAGE_IMAGE.out.versions.first())
 
     //
     // MODULE: Run DumpSoftwareVersions
